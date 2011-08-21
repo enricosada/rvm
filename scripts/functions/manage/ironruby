@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-ironruby_instal()
+ironruby_install()
 {
   if ! command -v mono > /dev/null
   then
@@ -9,7 +9,7 @@ ironruby_instal()
 
   if (( ${rvm_head_flag:=0} == 1 ))
   then
-    mono_version="$(mono -V | head -n 1 | cut -d ' ' -f5)"
+    mono_version="$(command mono -V | head -n 1 | cut -d ' ' -f5)"
 
     if "$rvm_scripts_path/match" "$mono_version" "([0-9]+)\.([0-9]+)\.?([0-9]+)?"
     then
@@ -28,8 +28,6 @@ ironruby_instal()
     return 1
   fi
 
-  __rvm_ensure_has_mri_ruby
-
   __rvm_fetch_ruby
 
   result=$?
@@ -45,8 +43,10 @@ ironruby_instal()
   "$rvm_wrappers_path/$compatible_ruby/gem" install pathname2 --no-rdoc --no-ri
 
   # MONO_LIB=/Library/Frameworks/Mono.framework/Versions/current/lib/
-  rvm_ruby_make="$rvm_wrappers_path/$compatible_ruby/rake MERLIN_ROOT=\"${rvm_src_path}/$rvm_ruby_string/Merlin/Main\" compile mono=1 configuration=release --trace"
-  __rvm_run "rake" "$rvm_ruby_make" "Building IronRuby..."
+  echo "Building IronRuby..."
+  xbuild_out="$(xbuild /p:Configuration=Release Solutions/Ruby.sln)"
+  echo "build output: $xbuild_out"
+  
   unset compatible_ruby
   result=$?
   if (( result > 0 ))
@@ -59,10 +59,11 @@ ironruby_instal()
   mkdir -p "$rvm_ruby_home/bin" "$rvm_ruby_home/lib" \
     "$rvm_ruby_home/lib/ruby" "$rvm_ruby_home/lib/IronRuby"
 
-  cp -r "${rvm_src_path}/$rvm_ruby_string/Merlin/Main/Bin/mono_release"/* "$rvm_ruby_home/bin/"
-  cp -r "${rvm_src_path}/$rvm_ruby_string/Merlin/Main/Languages/Ruby/Scripts/bin"/* "$rvm_ruby_home/bin/"
-  cp -r "${rvm_src_path}/$rvm_ruby_string/Merlin/External.LCA_RESTRICTED/Languages/Ruby/redist-libs/ruby"/* "$rvm_ruby_home/lib/ruby"
-  cp -r "${rvm_src_path}/$rvm_ruby_string/Merlin/Main/Languages/Ruby/Libs"/* "$rvm_ruby_home/lib/IronRuby"
+  cp -r "${rvm_src_path}/$rvm_ruby_string/bin/Release"/* "$rvm_ruby_home/bin/"
+  cp -r "${rvm_src_path}/$rvm_ruby_string/Languages/Ruby/Scripts/bin"/* "$rvm_ruby_home/bin/"
+  cp -r "${rvm_src_path}/$rvm_ruby_string/External.LCA_RESTRICTED/Languages/Ruby/ruby19/lib/ruby"/* "$rvm_ruby_home/lib/ruby"
+  cp -r "${rvm_src_path}/$rvm_ruby_string/Languages/Ruby/StdLib/ironruby"/* "$rvm_ruby_home/lib/IronRuby"
+
 else
   rvm_log "Retrieving IronRuby"
 
